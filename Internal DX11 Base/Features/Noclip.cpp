@@ -182,23 +182,6 @@ void Noclip::PositionThreadWorker() {
     }
     Logger::Log("Noclip::PositionThreadWorker: g_Running confirmed, starting main loop.");
     // ================================================================
-
-    // ✅ PERFORMANCE: Cache pointers once instead of recalculating every frame
-    if (!m_pointersInitialized) {
-        m_cachedPositionPtr = GetPositionPointer();
-        m_cachedVelocityPtr = GetVelocityPointer();
-        m_pointersInitialized = true;
-        
-        if (m_cachedPositionPtr == 0) {
-            Logger::Error("Noclip: Failed to get position pointer in thread");
-            return;
-        }
-        if (m_cachedVelocityPtr == 0) {
-            Logger::Error("Noclip: Failed to get velocity pointer in thread");
-            return;
-        }
-        Logger::Log("Noclip: Position and velocity pointers cached for performance");
-    }
     
     Utils::Vector3 lastWrittenPosition(0, 0, 0);
     
@@ -216,20 +199,28 @@ void Noclip::PositionThreadWorker() {
             targetPos.y != lastWrittenPosition.y || 
             targetPos.z != lastWrittenPosition.z) {
             
+            // ✅ KLASSENWECHSEL-FIX: Pointer vor jedem Write neu lesen
+            uintptr_t currentPositionPtr = GetPositionPointer();
+            if (currentPositionPtr == 0) {
+                Logger::Error("Noclip: Failed to get position pointer in thread");
+                std::this_thread::sleep_for(std::chrono::milliseconds(10));
+                continue;
+            }
+            
             // Write double values directly
             double x = static_cast<double>(targetPos.x);
             double y = static_cast<double>(targetPos.y);
             double z = static_cast<double>(targetPos.z);
             
-            if (m_memory->Write(m_cachedPositionPtr + Offsets::Noclip::o_PositionX, x) &&
-                m_memory->Write(m_cachedPositionPtr + Offsets::Noclip::o_PositionY, y) &&
-                m_memory->Write(m_cachedPositionPtr + Offsets::Noclip::o_PositionZ, z)) {
+            if (m_memory->Write(currentPositionPtr + Offsets::Noclip::o_PositionX, x) &&
+                m_memory->Write(currentPositionPtr + Offsets::Noclip::o_PositionY, y) &&
+                m_memory->Write(currentPositionPtr + Offsets::Noclip::o_PositionZ, z)) {
                 
                 lastWrittenPosition = targetPos;
             }
         }
         
-        // Set all velocity values (X,Z=0, Y=0.35 for better control)
+        // ✅ KLASSENWECHSEL-FIX: Velocity Pointer vor jedem Write neu lesen
         SetVelocity(Offsets::GameConstants::NOCLIP_VELOCITY_X, Offsets::GameConstants::NOCLIP_VELOCITY_Y, Offsets::GameConstants::NOCLIP_VELOCITY_Z);
         
         // Brief pause to save CPU
@@ -242,39 +233,42 @@ uintptr_t Noclip::GetPositionPointer() {
     uintptr_t baseAddress = m_memory->GetBaseAddress();
     
     // Follow pointer chain: [base+58] -> [result+2A0] -> [result+C00]
-    uintptr_t ptr1, ptr2, ptr3, ptr4;
+    uintptr_t ptr1, ptr2, ptr3, ptr4, ptr5;
     
     if (!m_memory->Read(baseAddress + Offsets::Noclip::pBaseAddress, ptr1)) return 0;
     if (!m_memory->Read(ptr1 + Offsets::Noclip::o_Offset1, ptr2)) return 0;
     if (!m_memory->Read(ptr2 + Offsets::Noclip::o_Offset2, ptr3)) return 0;
     if (!m_memory->Read(ptr3 + Offsets::Noclip::o_Offset3, ptr4)) return 0;
+    if (!m_memory->Read(ptr4 + Offsets::Noclip::o_Offset4, ptr5)) return 0;
     
-    return ptr4 + Offsets::Noclip::o_Offset4;
+    return ptr5 + Offsets::Noclip::o_Offset5;
 }
 
 uintptr_t Noclip::GetVelocityPointer() {
     uintptr_t baseAddress = m_memory->GetBaseAddress();
     
     // Follow velocity pointer chain: [base+5B0] -> [result+3B8]
-    uintptr_t ptr1, ptr2, ptr3;
+    uintptr_t ptr1, ptr2, ptr3, ptr4;
     
     if (!m_memory->Read(baseAddress + Offsets::Noclip::pVelocityBaseAddress, ptr1)) return 0;
     if (!m_memory->Read(ptr1 + Offsets::Noclip::o_VelocityOffset1, ptr2)) return 0;
     if (!m_memory->Read(ptr2 + Offsets::Noclip::o_VelocityOffset2, ptr3)) return 0;
+    if (!m_memory->Read(ptr3 + Offsets::Noclip::o_VelocityOffset3, ptr4)) return 0;
     
-    return ptr3 + Offsets::Noclip::o_VelocityOffset3;
+    return ptr4 + Offsets::Noclip::o_VelocityOffset4;
 }
 
 void Noclip::SetVelocity(float velocityX, float velocityY, float velocityZ) {
-    // ✅ PERFORMANCE: Use cached velocity pointer instead of recalculating
-    if (m_cachedVelocityPtr == 0) {
+    // ✅ KLASSENWECHSEL-FIX: Velocity Pointer vor jedem Write neu lesen
+    uintptr_t currentVelocityPtr = GetVelocityPointer();
+    if (currentVelocityPtr == 0) {
         return; // Failed to get velocity pointer
     }
     
     // Write all velocity values
-    m_memory->Write(m_cachedVelocityPtr + Offsets::Noclip::o_VelocityX, velocityX);
-    m_memory->Write(m_cachedVelocityPtr + Offsets::Noclip::o_VelocityY, velocityY);
-    m_memory->Write(m_cachedVelocityPtr + Offsets::Noclip::o_VelocityZ, velocityZ);
+    m_memory->Write(currentVelocityPtr + Offsets::Noclip::o_VelocityX, velocityX);
+    m_memory->Write(currentVelocityPtr + Offsets::Noclip::o_VelocityY, velocityY);
+    m_memory->Write(currentVelocityPtr + Offsets::Noclip::o_VelocityZ, velocityZ);
 }
 
 Utils::Vector3 Noclip::GetViewAngles() {
@@ -326,6 +320,7 @@ Utils::Vector3 Noclip::GetRightVector(const Utils::Vector3& viewAngles) {
 
 Utils::Vector3 Noclip::GetWorldPosition() {
     Utils::Vector3 position;
+    // ✅ KLASSENWECHSEL-FIX: Pointer vor jedem Read neu lesen
     uintptr_t posPtr = GetPositionPointer();
     
     if (posPtr == 0) {
@@ -350,6 +345,7 @@ Utils::Vector3 Noclip::GetWorldPosition() {
 }
 
 void Noclip::SetWorldPosition(const Utils::Vector3& worldPos) {
+    // ✅ KLASSENWECHSEL-FIX: Pointer vor jedem Write neu lesen
     uintptr_t posPtr = GetPositionPointer();
     
     if (posPtr == 0) {

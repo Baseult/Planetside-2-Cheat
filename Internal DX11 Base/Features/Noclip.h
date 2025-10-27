@@ -43,11 +43,6 @@ private:
     std::atomic<bool> m_noclipActive;
     std::mutex m_positionMutex;
     
-    // ✅ PERFORMANCE: Cached pointers to avoid repeated calculations
-    uintptr_t m_cachedPositionPtr = 0;
-    uintptr_t m_cachedVelocityPtr = 0;
-    bool m_pointersInitialized = false;
-    
     void ApplyMovement(const Utils::Vector3& worldPos);
     uintptr_t GetPositionPointer();
     uintptr_t GetVelocityPointer();

@@ -91,9 +91,10 @@ namespace Offsets {
         // Chain: [base+58] -> [result+2A0] -> [result+C00] -> X,Y,Z as Double
         static constexpr uintptr_t pBaseAddress = 0x04260B60;
         static constexpr uintptr_t o_Offset1 = 0x248;
-        static constexpr uintptr_t o_Offset2 = 0x70;
-        static constexpr uintptr_t o_Offset3 = 0x178;
-        static constexpr uintptr_t o_Offset4 = 0x208;
+        static constexpr uintptr_t o_Offset2 = 0xE0;
+        static constexpr uintptr_t o_Offset3 = 0x180;
+        static constexpr uintptr_t o_Offset4 = 0x268;
+        static constexpr uintptr_t o_Offset5 = 0x208;
         
         // Relative Offsets for X, Y, Z (8 bytes each for Double)
         static constexpr uintptr_t o_PositionX = 0x0;   // +0
@@ -105,8 +106,9 @@ namespace Offsets {
         // Chain: [base+5B0] -> [result+3B8] -> X,Y,Z Velocity as Double
         static constexpr uintptr_t pVelocityBaseAddress = 0x04260B60;
         static constexpr uintptr_t o_VelocityOffset1 = 0x248;
-        static constexpr uintptr_t o_VelocityOffset2 = 0x70;
-        static constexpr uintptr_t o_VelocityOffset3 = 0x210;
+        static constexpr uintptr_t o_VelocityOffset2 = 0xE0;
+        static constexpr uintptr_t o_VelocityOffset3 = 0x180;
+        static constexpr uintptr_t o_VelocityOffset4 = 0x300;
         
         // Relative Offsets for Velocity X, Y, Z (8 bytes each for Double)
         static constexpr uintptr_t o_VelocityX = 0x0;   // +0
