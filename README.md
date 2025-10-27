@@ -4,6 +4,8 @@
 [![Visual Studio](https://img.shields.io/badge/IDE-Visual%20Studio-blue.svg)](https://visualstudio.microsoft.com/)
 [![C++](https://img.shields.io/badge/Language-C%2B%2B-blue.svg)](https://isocpp.org/)
 
+![img](https://i.imgur.com/z9uOEpU.jpeg)
+
 ## ⚠️ Legal Disclaimer
 
 **This project is for educational and research purposes only.** The code demonstrates:
