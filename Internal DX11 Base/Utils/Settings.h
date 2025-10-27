@@ -111,6 +111,9 @@ struct Settings {
     struct Noclip_t {
         bool bEnabled = false;
         float fSpeed = 0.2f;  // Movement speed per frame
+        bool bUseHotkey = false;       // Hotkey-Aktivierung
+        int iHotkey = VK_F1;           // Standard: F1
+        bool bWaitingForHotkey = false; // Hotkey-Auswahl aktiv
         // Note: Direct memory access - no coordinate conversion needed!
         // Reading/Writing Double values directly from memory
     } Noclip;

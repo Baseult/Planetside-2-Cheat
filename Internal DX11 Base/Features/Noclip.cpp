@@ -34,7 +34,24 @@ Noclip::~Noclip() {
 }
 
 void Noclip::Update() {
-    if (!g_Settings.Noclip.bEnabled) {
+    // Check if Noclip should be enabled (either always on or via hotkey)
+    bool shouldBeEnabled = g_Settings.Noclip.bEnabled;
+    
+    // If hotkey is enabled, check for hotkey press
+    if (g_Settings.Noclip.bUseHotkey) {
+        static bool hotkeyPressed = false;
+        bool currentlyPressed = (GetAsyncKeyState(g_Settings.Noclip.iHotkey) & 0x8000) != 0;
+        
+        // Toggle on key press (not hold)
+        if (currentlyPressed && !hotkeyPressed) {
+            g_Settings.Noclip.bEnabled = !g_Settings.Noclip.bEnabled;
+        }
+        hotkeyPressed = currentlyPressed;
+        
+        shouldBeEnabled = g_Settings.Noclip.bEnabled;
+    }
+    
+    if (!shouldBeEnabled) {
         if (m_noclipActive) {
             StopPositionThread();
             m_noclipActive = false;
@@ -71,7 +88,7 @@ void Noclip::ProcessInput() {
     Utils::Vector3 right = GetRightVector(viewAngles);
 
     Utils::Vector3 newPosition = currentPosition;
-    float speed = g_Settings.Noclip.fSpeed;
+    float speed = g_Settings.Noclip.fSpeed / 10.0f;  // Divide by 10 for more precise control
     
     // ✅ PERFORMANCE: Batch all GetAsyncKeyState calls together instead of 6 separate calls
     bool wPressed = (GetAsyncKeyState('W') & 0x8000) != 0;
@@ -248,7 +265,7 @@ uintptr_t Noclip::GetVelocityPointer() {
     return ptr3 + Offsets::Noclip::o_VelocityOffset3;
 }
 
-void Noclip::SetVelocity(double velocityX, double velocityY, double velocityZ) {
+void Noclip::SetVelocity(float velocityX, float velocityY, float velocityZ) {
     // ✅ PERFORMANCE: Use cached velocity pointer instead of recalculating
     if (m_cachedVelocityPtr == 0) {
         return; // Failed to get velocity pointer

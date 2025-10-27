@@ -5,6 +5,7 @@
 #include <thread>
 #include <atomic>
 #include <set>
+#include <queue>
 
 class BulletHarvester {
 public:
@@ -17,8 +18,8 @@ public:
     
 private:
     void UpdateThread();
-    void MagicBulletThread();
-    void ReadBulletData();
+    void CollectBulletsThread();  // Renamed from MagicBulletThread
+    void ProcessBulletQueue();    // NEW: Process bullets from queue
     bool ReadBulletSnapshot(uintptr_t bulletPtr, BulletSnapshot& snapshot);
     void CleanupExpiredBullets();
     void SwapBuffers();
@@ -29,7 +30,7 @@ private:
     mutable std::mutex m_snapshotMutex;
     
     std::thread m_updateThread;
-    std::thread m_magicBulletThread;
+    std::thread m_collectBulletsThread;  // Renamed from m_magicBulletThread
     std::atomic<bool> m_isRunning;
     uintptr_t m_lastTrackedBulletPtr = 0;
     
@@ -42,6 +43,10 @@ private:
     // Track freezed bullets to avoid overwriting manipulated bullets
     std::set<uintptr_t> m_freezedBullets;
     mutable std::mutex m_freezedBulletsMutex;
+    
+    // NEW: Queue for collected bullet IDs
+    std::queue<uintptr_t> m_bulletQueue;
+    mutable std::mutex m_bulletQueueMutex;
 };
 
 inline std::unique_ptr<BulletHarvester> g_BulletHarvester;

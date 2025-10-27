@@ -16,6 +16,7 @@
 #include "Features/Aimbot.h"
 #include "Hooking/hookmain.h"
 #include "Hooking/MinHook.h"
+#include "Utils/SettingsManager.h"
 
 using namespace DX11Base;
 
@@ -117,12 +118,6 @@ void Shutdown()
         Logger::Log("... TargetManager threads stopped.");
     }
     
-    if (g_BulletHarvester) {
-        Logger::Log("--> Stopping BulletHarvester threads...");
-        g_BulletHarvester.reset();
-        Logger::Log("... BulletHarvester threads stopped.");
-    }
-    
     std::this_thread::sleep_for(500ms);
     
     Logger::Log("--> Final thread cleanup check...");
@@ -178,6 +173,13 @@ void Shutdown()
         g_ProcessMonitor->StopMonitoring();
         g_ProcessMonitor.reset();
         Logger::Log("... Process monitor stopped.");
+    }
+    
+    // Stop BulletHarvester threads with timeout
+    if (g_BulletHarvester) {
+        Logger::Log("--> Stopping BulletHarvester threads...");
+        g_BulletHarvester.reset();
+        Logger::Log("... BulletHarvester threads stopped.");
     }
 
     // Explicitly destroy remaining global feature objects (in reverse order of creation)
@@ -237,6 +239,10 @@ DWORD WINAPI MainThread_Initialize(LPVOID dwModule) {
     // Initialize logger
     Logger::Init();
     Logger::Log("-> MainThread_Initialize started.");
+    
+    // Load settings from config file
+    SettingsManager::LoadSettings();
+    Logger::Log("Settings loaded from config file.");
 
     // Initialize MinHook first
     if (MH_Initialize() != MH_OK) {
@@ -326,6 +332,10 @@ DWORD WINAPI MainThread_Initialize(LPVOID dwModule) {
         }
         std::this_thread::yield();
     }
+
+    // Save settings before shutdown
+    SettingsManager::SaveSettings();
+    Logger::Log("Settings saved to config file.");
 
     // Call clean shutdown function
     Shutdown();

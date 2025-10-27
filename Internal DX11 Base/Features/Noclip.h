@@ -51,7 +51,7 @@ private:
     void ApplyMovement(const Utils::Vector3& worldPos);
     uintptr_t GetPositionPointer();
     uintptr_t GetVelocityPointer();
-    void SetVelocity(double velocityX, double velocityY, double velocityZ);
+    void SetVelocity(float velocityX, float velocityY, float velocityZ);
 };
 
 inline Noclip* g_Noclip = nullptr;

@@ -72,7 +72,21 @@ void MagicBullet::ManipulateFreshBullets() {
     if (!targetOpt) return;
 
     const EntitySnapshot& currentTarget = *targetOpt;
-    Utils::Vector3 targetPos = g_Settings.MagicBullet.bTargetHead ? currentTarget.headPosition : currentTarget.position;
+    
+    // Calculate correct target position based on entity type and settings
+    Utils::Vector3 targetPos;
+    if (g_Settings.MagicBullet.bTargetHead) {
+        if (IsMAXUnit(currentTarget.type)) {
+            // For MAX units, use entity position + AIMBOT_MAX_HEAD_HEIGHT (same as aimbot)
+            targetPos = currentTarget.position;
+            targetPos.y += Offsets::GameConstants::AIMBOT_MAX_HEAD_HEIGHT;
+        } else {
+            // For normal players, use the calculated headPosition
+            targetPos = currentTarget.headPosition;
+        }
+    } else {
+        targetPos = currentTarget.position;
+    }
 
     auto bulletSnapshot = g_BulletHarvester->GetBulletSnapshot();
     auto worldSnapshot = g_Game->GetWorldSnapshot();
@@ -86,18 +100,18 @@ void MagicBullet::ManipulateFreshBullets() {
     for (const auto& bullet : bulletSnapshot->bullets) {
         validBullets++;
 
-        float distSquared = worldSnapshot->localPlayer.position.DistanceSquared(bullet.startPosition);
-        if (distSquared > Offsets::GameConstants::MAGIC_BULLET_DISTANCE_THRESHOLD) continue;
+        //float distSquared = worldSnapshot->localPlayer.position.DistanceSquared(bullet.startPosition);
+        //if (distSquared > Offsets::GameConstants::MAGIC_BULLET_DISTANCE_THRESHOLD) continue;
 
         ManipulateBullet(bullet, targetPos);
         manipulatedBullets++;
     }
     
     // ✅ NEW: Log only if bullets exist but were not manipulated
-    static int logCounter = 0;
-    if (validBullets > 0 && manipulatedBullets == 0 && ++logCounter % 100 == 0) {
-        Logger::Log("[MagicBullet] %d valid bullets, but 0 manipulated (check live validation)", validBullets);
-    }
+    //static int logCounter = 0;
+    //if (validBullets > 0 && manipulatedBullets == 0 && ++logCounter % 100 == 0) {
+    //    Logger::Log("[MagicBullet] %d valid bullets, but 0 manipulated (check live validation)", validBullets);
+    //}
 }
 
 void MagicBullet::ManipulateBullet(const BulletSnapshot& bullet, const Utils::Vector3& targetPos) {

@@ -135,9 +135,12 @@ namespace Offsets {
         
         // ESP Box Constants
         constexpr float PLAYER_BOX_WIDTH_FACTOR = 0.65f;    ///< Player ESP box width factor
-        constexpr float VEHICLE_BOX_WIDTH_FACTOR = 1.5f;     ///< Vehicle ESP box width factor
-        constexpr float AIR_VEHICLE_SIZE_FACTOR = 0.5f;     ///< Air vehicle hexagon size factor
+        constexpr float VEHICLE_BOX_WIDTH_FACTOR = 3.5f;     ///< Vehicle ESP box width factor
+        constexpr float AIR_VEHICLE_SIZE_FACTOR = 2.0f;     ///< Air vehicle hexagon size factor
         constexpr float TURRET_SIZE_FACTOR = 0.8f;           ///< Turret X size factor
+        constexpr float OTHERS_SIZE_FACTOR = 0.3f;           ///< Other entities (ammo packs, etc.) size factor
+        constexpr float OTHERS_HEAD_HEIGHT = 0.15f;          ///< Other entities head height
+        constexpr float VEHICLE_HEAD_HEIGHT = 3.5f;
         
         // Health Bar Constants
         constexpr float HEALTH_BAR_WIDTH_FACTOR = 0.06f;    ///< Health bar width factor
@@ -147,10 +150,10 @@ namespace Offsets {
         
         // ESP Label Position Offsets
         constexpr float LABEL_PLAYER_OFFSET = -0.35f;       ///< Player label Y offset
-        constexpr float LABEL_GROUND_VEHICLE_OFFSET = -1.35f; ///< Ground vehicle label Y offset
-        constexpr float LABEL_AIR_VEHICLE_OFFSET = -3.0f;   ///< Air vehicle label Y offset
+        constexpr float LABEL_GROUND_VEHICLE_OFFSET = -0.75f; ///< Ground vehicle label Y offset
+        constexpr float LABEL_AIR_VEHICLE_OFFSET = -3.5f;   ///< Air vehicle label Y offset
         constexpr float LABEL_TURRET_OFFSET = -0.5f;        ///< Turret label Y offset
-        constexpr float LABEL_OTHER_OFFSET = -0.2f;         ///< Other entity label Y offset
+        constexpr float LABEL_OTHER_OFFSET = -0.25f;         ///< Other entity label Y offset
         constexpr float LABEL_DEFAULT_OFFSET = -0.35f;      ///< Default label Y offset
         
         // ESP Drawing Constants
@@ -158,7 +161,7 @@ namespace Offsets {
         constexpr float TRACER_LENGTH = 2.5f;               ///< Bullet tracer length
         
         // Magic Bullet Constants
-        constexpr float MAGIC_BULLET_DISTANCE_THRESHOLD = 16.0f; ///< Magic bullet distance threshold
+        constexpr float MAGIC_BULLET_DISTANCE_THRESHOLD = 32.0f; ///< Magic bullet distance threshold
         constexpr float MAGIC_BULLET_POSITION_OFFSET = 0.5f;     ///< Magic bullet position Y offset
         constexpr float MAGIC_BULLET_SPEED = 10000.0f;           ///< Magic bullet speed
         

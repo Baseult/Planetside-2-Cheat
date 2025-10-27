@@ -8,6 +8,7 @@
 #include "Features/Noclip.h"
 #include "Game/Game.h"
 #include "Utils/Settings.h"
+#include "Utils/SettingsManager.h"
 #include <algorithm>
 
 // Helper functions for Aimbot menu
@@ -111,6 +112,14 @@ namespace DX11Base {
 
 	void Menu::DrawMenu() 
 	{
+		// Set initial window size and position for better first-time experience
+		static bool firstTime = true;
+		if (firstTime) {
+			ImGui::SetNextWindowSize(ImVec2(800, 600), ImGuiCond_FirstUseEver);
+			ImGui::SetNextWindowPos(ImVec2(100, 100), ImGuiCond_FirstUseEver);
+			firstTime = false;
+		}
+		
 		if (ImGui::Begin("Planetside 2 Cheat", NULL, Flags))
 		{
 			if (ImGui::BeginTabBar("MainTabs")) {
@@ -195,8 +204,6 @@ namespace DX11Base {
 						g_Settings.Targeting.Mode == ETargetingMode::SmartFOV) {
 						ImGui::SliderFloat("FOV Radius", &g_Settings.Targeting.fFOV, 10.0f, 500.0f, "%.0f px");
 					}
-					
-					ImGui::SliderFloat("Max Target Distance", &g_Settings.Targeting.fMaxDistance, 50.0f, 1000.0f, "%.0f m");
 					
 					ImGui::Separator();
 					ImGui::Text("Target Filters:");
@@ -372,9 +379,6 @@ namespace DX11Base {
 						}
 					}
 					
-					ImGui::Separator();
-					ImGui::SliderFloat("Max Distance", &g_Settings.Aimbot.fMaxDistance, 50.0f, 500.0f, "%.0f m");
-					
 					ImGui::EndTabItem();
 				}
 				
@@ -386,6 +390,29 @@ namespace DX11Base {
 					ImGui::Checkbox("Enable Noclip/Flight", &g_Settings.Noclip.bEnabled);
 					ImGui::Separator();
 					
+					ImGui::Text("Activation:");
+					ImGui::Checkbox("Use Hotkey", &g_Settings.Noclip.bUseHotkey);
+					if (g_Settings.Noclip.bUseHotkey) {
+						// Hotkey selector
+						ImGui::Text("Hotkey: %s", GetKeyName(g_Settings.Noclip.iHotkey));
+						if (ImGui::Button("Change Hotkey")) {
+							g_Settings.Noclip.bWaitingForHotkey = true;
+						}
+						
+						if (g_Settings.Noclip.bWaitingForHotkey) {
+							ImGui::TextColored(ImVec4(1.0f, 1.0f, 0.0f, 1.0f), "Press any key...");
+							// Check for any key press
+							for (int i = 1; i < 256; i++) {
+								if (GetAsyncKeyState(i) & 0x8000) {
+									g_Settings.Noclip.iHotkey = i;
+									g_Settings.Noclip.bWaitingForHotkey = false;
+									break;
+								}
+							}
+						}
+					}
+					
+					ImGui::Separator();
 					ImGui::Text("Controls:");
 					ImGui::BulletText("W/A/S/D - Move Forward/Left/Backward/Right");
 					ImGui::BulletText("CAPSLOCK - Move Up");
@@ -452,7 +479,19 @@ namespace DX11Base {
 					}
 					
 					ImGui::Separator();
-					if(ImGui::Button("Uninject DLL", ImVec2(200, 30))) {
+					ImGui::Text("Settings Management:");
+					if(ImGui::Button("Save Settings", ImVec2(150, 30))) {
+						SettingsManager::SaveSettings();
+					}
+					ImGui::SameLine();
+					if(ImGui::Button("Load Settings", ImVec2(150, 30))) {
+						SettingsManager::LoadSettings();
+					}
+					if(ImGui::Button("Reset to Defaults", ImVec2(150, 30))) {
+						SettingsManager::ResetToDefaults();
+					}
+					ImGui::SameLine();
+					if(ImGui::Button("Uninject DLL", ImVec2(150, 30))) {
 						g_Running = false;
 					}
 					

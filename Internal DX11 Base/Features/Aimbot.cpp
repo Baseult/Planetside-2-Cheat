@@ -98,11 +98,16 @@ void Aimbot::AimbotWorker() {
                     }
                     
                     Utils::Vector3 mouseMovement = CalculateAimAngles(headPos);
-                    ApplySmoothing(mouseMovement);
+                    
+                    int mouseX = static_cast<int>(mouseMovement.x);
+                    int mouseY = static_cast<int>(mouseMovement.y);
+
+                    // Apply mouse movement directly (like InputSys::Get().move_mouse in your C# code)
+                    MoveMouse(mouseX, mouseY);
                 }
             }
             
-            std::this_thread::yield(); // Yield for smoother movement
+            std::this_thread::sleep_for(std::chrono::milliseconds(10)); // Yield for smoother movement
         }
         catch (...) {
             // Silent catch to prevent crashes during shutdown
@@ -156,7 +161,7 @@ Utils::Vector3 Aimbot::CalculateAimAngles(const Utils::Vector3& targetPos) {
     float distanceToTarget = relativeMovement.Length();
 
     // Deadzone: If we are already very close to target (e.g. 1 pixel), stop to avoid jitter.
-    if (distanceToTarget < 1.0f) {
+    if (distanceToTarget < 5.0f) {
         return Utils::Vector3(0, 0, 0);
     }
 
@@ -203,17 +208,6 @@ Utils::Vector3 Aimbot::CalculateAimAngles(const Utils::Vector3& targetPos) {
     }
 
     return Utils::Vector3(mouseMovement.x, mouseMovement.y, 0);
-}
-
-void Aimbot::ApplySmoothing(const Utils::Vector3& targetMouseMovement) {
-    // Direct mouse movement like in your C# code - no complex smoothing
-    // Just apply the calculated movement directly
-    
-    int mouseX = static_cast<int>(targetMouseMovement.x);
-    int mouseY = static_cast<int>(targetMouseMovement.y);
-    
-    // Apply mouse movement directly (like InputSys::Get().move_mouse in your C# code)
-    MoveMouse(mouseX, mouseY);
 }
 
 bool Aimbot::InitializeNtUserInjectMouseInput() {

@@ -337,11 +337,22 @@ void ESP::DrawSkeleton(const EntitySnapshot& entity, const Utils::Vector2& scree
         skeletonColor = GetTeamColor(entity.team);
     }
 
+    // Calculate correct head position based on entity type
+    Utils::Vector3 correctHeadPosition;
+    if (IsMAXUnit(entity.type)) {
+        // For MAX units, use entity position + AIMBOT_MAX_HEAD_HEIGHT (same as aimbot)
+        correctHeadPosition = entity.position;
+        correctHeadPosition.y += Offsets::GameConstants::AIMBOT_MAX_HEAD_HEIGHT;
+    } else {
+        // For normal players, use the calculated headPosition
+        correctHeadPosition = entity.headPosition;
+    }
+
     // Convert actual 3D positions to screen coordinates
     Utils::Vector2 actualHeadScreenPos;
     Utils::Vector2 actualFeetScreenPos;
     
-    if (!g_Game->WorldToScreen(entity.headPosition, actualHeadScreenPos)) {
+    if (!g_Game->WorldToScreen(correctHeadPosition, actualHeadScreenPos)) {
         return; // Head not on screen
     }
     

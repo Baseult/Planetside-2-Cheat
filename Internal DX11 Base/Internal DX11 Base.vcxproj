@@ -186,6 +186,7 @@
     <ClInclude Include="Utils\ProcessMonitor.h" />
     <ClInclude Include="Utils\SafeMemory.h" />
     <ClInclude Include="Utils\Settings.h" />
+    <ClInclude Include="Utils\SettingsManager.h" />
     <ClInclude Include="Utils\Vector.h" />
   </ItemGroup>
   <ItemGroup>
@@ -356,6 +357,12 @@
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Use</PrecompiledHeader>
     </ClCompile>
     <ClCompile Include="Utils\SafeMemory.cpp" />
+    <ClCompile Include="Utils\SettingsManager.cpp">
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Use</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Use</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Use</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Use</PrecompiledHeader>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <None Include="Hooking\minhook.def" />

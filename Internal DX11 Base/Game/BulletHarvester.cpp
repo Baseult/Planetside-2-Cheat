@@ -12,17 +12,26 @@ BulletHarvester::BulletHarvester() : m_isRunning(true) {
     m_snapshot_back = std::make_unique<BulletWorldSnapshot>();
     
     m_updateThread = std::thread(&BulletHarvester::UpdateThread, this);
-    m_magicBulletThread = std::thread(&BulletHarvester::MagicBulletThread, this);
-    Logger::Log("BulletHarvester created with 2 threads");
+    m_collectBulletsThread = std::thread(&BulletHarvester::CollectBulletsThread, this);
+    Logger::Log("BulletHarvester created with 2 threads (UpdateThread + CollectBulletsThread)");
 }
 
 BulletHarvester::~BulletHarvester() {
+    Logger::Log("BulletHarvester destructor called, stopping threads...");
     m_isRunning = false;
+    
+    // Give threads a moment to exit gracefully
+    std::this_thread::sleep_for(std::chrono::milliseconds(100));
+    
     if (m_updateThread.joinable()) {
+        Logger::Log("Joining UpdateThread...");
         m_updateThread.join();
+        Logger::Log("UpdateThread joined successfully.");
     }
-    if (m_magicBulletThread.joinable()) {
-        m_magicBulletThread.join();
+    if (m_collectBulletsThread.joinable()) {
+        Logger::Log("Joining CollectBulletsThread...");
+        m_collectBulletsThread.join();
+        Logger::Log("CollectBulletsThread joined successfully.");
     }
     Logger::Log("BulletHarvester destroyed");
 }
@@ -69,27 +78,31 @@ void BulletHarvester::UpdateThread() {
     }
 
     while (m_isRunning && DX11Base::g_Running) {
-        ReadBulletData();
+        ProcessBulletQueue();
         CleanupExpiredBullets();
         SwapBuffers();
+        
+        // Check shutdown conditions more frequently
+        if (!m_isRunning || !DX11Base::g_Running) break;
+        
         std::this_thread::yield(); // Yield for better performance
     }
     Logger::Log("BulletHarvester::UpdateThread exited loop.");
 }
 
-void BulletHarvester::MagicBulletThread() {
-    Logger::Log("BulletHarvester::MagicBulletThread entered.");
+void BulletHarvester::CollectBulletsThread() {
+    Logger::Log("BulletHarvester::CollectBulletsThread entered.");
 
     // Wait for startup sync
     int startup_tries = 0;
     while (!DX11Base::g_Running) {
         if (++startup_tries > 100) { 
-            Logger::Error("BulletHarvester::MagicBulletThread timed out waiting for g_Running.");
+            Logger::Error("BulletHarvester::CollectBulletsThread timed out waiting for g_Running.");
             return;
         }
         std::this_thread::yield();
     }
-    Logger::Log("BulletHarvester::MagicBulletThread: g_Running confirmed, starting magic bullet loop.");
+    Logger::Log("BulletHarvester::CollectBulletsThread: g_Running confirmed, starting bullet collection loop.");
 
     // Wait for addresses to be initialized by UpdateThread
     while (!m_addressesInitialized) {
@@ -98,60 +111,96 @@ void BulletHarvester::MagicBulletThread() {
 
     // Cache basePtr once
     if (!g_Game || !g_Game->GetMemory()->Read(m_cachedBulletPointerBase, m_cachedBulletBasePtr) || m_cachedBulletBasePtr == 0) {
-        Logger::Error("BulletHarvester::MagicBulletThread: Failed to cache basePtr");
+        Logger::Error("BulletHarvester::CollectBulletsThread: Failed to cache basePtr");
         return;
     }
 
     while (m_isRunning && DX11Base::g_Running) {
-        // Only freeze bullets if Magic Bullet is enabled
-        if (g_Settings.MagicBullet.bEnabled) {
-            uintptr_t bulletPtr = 0;
-     
-            if (g_Game->GetMemory()->Read(m_cachedBulletBasePtr + Offsets::MagicBullet::pCurrentBulletPointerOffsets[0], bulletPtr) && bulletPtr != 0) {
-                // Check if this bullet has already been freezed
+        uintptr_t bulletPtr = 0;
+        
+        // Read current bullet pointer
+        if (g_Game->GetMemory()->Read(m_cachedBulletBasePtr + Offsets::MagicBullet::pCurrentBulletPointerOffsets[0], bulletPtr) && bulletPtr != 0) {
+            // Check if bullet is alive
+            bool isAlive = false;
+            if (g_Game->GetMemory()->Read(bulletPtr + Offsets::MagicBullet::bullet_is_alive_offset, isAlive) && isAlive) {
+                // Add bullet to queue if not already processed
                 {
-                    std::lock_guard<std::mutex> lock(m_freezedBulletsMutex);
-                    if (m_freezedBullets.find(bulletPtr) != m_freezedBullets.end()) {
-                        // Bullet already freezed, skip
-                        std::this_thread::yield();
-                        continue;
-                    }
+                    std::lock_guard<std::mutex> lock(m_bulletQueueMutex);
+                    // Simple check to avoid duplicates (could be improved with a set)
+                    m_bulletQueue.push(bulletPtr);
                 }
                 
-                // Set bullet speed to 0.0f in game memory
-                if (g_Game->GetMemory()->Write(bulletPtr + Offsets::MagicBullet::bullet_speed_offset, 0.0f)) {
-                    // Mark bullet as freezed
-                    std::lock_guard<std::mutex> lock(m_freezedBulletsMutex);
-                    m_freezedBullets.insert(bulletPtr);
+                // If Magic Bullet is enabled, freeze the bullet
+                if (g_Settings.MagicBullet.bEnabled) {
+                    // Check if this bullet has already been freezed
+                    {
+                        std::lock_guard<std::mutex> lock(m_freezedBulletsMutex);
+                        if (m_freezedBullets.find(bulletPtr) == m_freezedBullets.end()) {
+                            // Set bullet speed to 0.0f in game memory
+                            if (g_Game->GetMemory()->Write(bulletPtr + Offsets::MagicBullet::bullet_speed_offset, 0.0f)) {
+                                // Mark bullet as freezed
+                                m_freezedBullets.insert(bulletPtr);
+                            }
+                        }
+                    }
                 }
             }
         }
         
+        // Check shutdown conditions more frequently
+        if (!m_isRunning || !DX11Base::g_Running) break;
+        
         // No sleep - maximum speed, but yield to other threads
         std::this_thread::yield();
     }
-    Logger::Log("BulletHarvester::MagicBulletThread exited loop.");
+    Logger::Log("BulletHarvester::CollectBulletsThread exited loop.");
 }
 
-void BulletHarvester::ReadBulletData() {
-    if (!g_Game) return;
+void BulletHarvester::ProcessBulletQueue() {
+    if (!g_Game || !m_isRunning || !DX11Base::g_Running) return;
     
-    uintptr_t bulletPtr = 0;
+    // Process multiple bullets from queue per cycle for better performance
+    int processedCount = 0;
+    const int maxProcessPerCycle = 10; // Process up to 10 bullets per cycle
     
-    if (!g_Game->GetMemory()->Read(m_cachedBulletBasePtr + Offsets::MagicBullet::pCurrentBulletPointerOffsets[0], bulletPtr) || bulletPtr == 0) return;
-    
-    if (bulletPtr != m_lastTrackedBulletPtr && bulletPtr != 0) {
-        m_lastTrackedBulletPtr = bulletPtr;
+    while (processedCount < maxProcessPerCycle) {
+        uintptr_t bulletPtr = 0;
         
+        // Get bullet from queue
+        {
+            std::lock_guard<std::mutex> lock(m_bulletQueueMutex);
+            if (m_bulletQueue.empty()) break;
+            bulletPtr = m_bulletQueue.front();
+            m_bulletQueue.pop();
+        }
+        
+        if (bulletPtr == 0) break;
+        
+        // Check if bullet is still alive and not already processed
         bool isAlive = false;
         if (!g_Game->GetMemory()->Read(bulletPtr + Offsets::MagicBullet::bullet_is_alive_offset, isAlive) || !isAlive) {
-            return;  // Bullet already dead - don't track
+            processedCount++;
+            continue; // Skip dead bullets
         }
         
-        BulletSnapshot snapshot;
-        if (ReadBulletSnapshot(bulletPtr, snapshot)) {
-            m_snapshot_back->bullets.push_back(snapshot);
+        // Check if we already have this bullet in our snapshot
+        bool alreadyExists = false;
+        for (const auto& existingBullet : m_snapshot_back->bullets) {
+            if (existingBullet.id == bulletPtr) {
+                alreadyExists = true;
+                break;
+            }
         }
+        
+        if (!alreadyExists) {
+            // Create detailed snapshot for this bullet
+            BulletSnapshot snapshot;
+            if (ReadBulletSnapshot(bulletPtr, snapshot)) {
+                m_snapshot_back->bullets.push_back(snapshot);
+            }
+        }
+        
+        processedCount++;
     }
 }
 
@@ -198,18 +247,23 @@ void BulletHarvester::CleanupExpiredBullets() {
     );
     
     // Cleanup freezed bullets set - remove expired bullet IDs
-    {
+    // Only do memory reads if we're still running and game is available
+    if (m_isRunning && DX11Base::g_Running && g_Game) {
         std::lock_guard<std::mutex> lock(m_freezedBulletsMutex);
         auto it = m_freezedBullets.begin();
         while (it != m_freezedBullets.end()) {
             // Check if bullet is still alive by reading from memory
             bool isAlive = false;
-            if (!g_Game || !g_Game->GetMemory()->Read(*it + Offsets::MagicBullet::bullet_is_alive_offset, isAlive) || !isAlive) {
+            if (!g_Game->GetMemory()->Read(*it + Offsets::MagicBullet::bullet_is_alive_offset, isAlive) || !isAlive) {
                 it = m_freezedBullets.erase(it);
             } else {
                 ++it;
             }
         }
+    } else {
+        // If shutting down, just clear all freezed bullets
+        std::lock_guard<std::mutex> lock(m_freezedBulletsMutex);
+        m_freezedBullets.clear();
     }
 }
 

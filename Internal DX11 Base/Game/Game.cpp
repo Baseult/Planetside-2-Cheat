@@ -237,7 +237,15 @@ void Game::ReadEntityList() {
             if (IsMAXUnit(snapshot.type)) {
                 headPos = snapshot.position;
                 headPos.y += Offsets::GameConstants::MAX_HEAD_HEIGHT;
-            } else {
+            } else if (IsOthersType(snapshot.type)) {
+                headPos = snapshot.position;
+                headPos.y += Offsets::GameConstants::OTHERS_HEAD_HEIGHT;
+            }
+            else if (IsGroundVehicleType(snapshot.type)) {
+                headPos = snapshot.position;
+                headPos.y += Offsets::GameConstants::VEHICLE_HEAD_HEIGHT;
+            }
+            else {
                 headPos = snapshot.headPosition;
                 headPos.y += Offsets::GameConstants::NORMAL_HEAD_HEIGHT;
             }
