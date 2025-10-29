@@ -28,6 +28,12 @@ bool SettingsManager::LoadSettings() {
         g_Settings.ESP.bBulletESP = ReadBool(file, "ESP.bBulletESP", false);
         g_Settings.ESP.bTeamESP = ReadBool(file, "ESP.bTeamESP", false);
         g_Settings.ESP.fMaxDistance = ReadFloat(file, "ESP.fMaxDistance", 500.0f);
+        g_Settings.ESP.bShowInfantry = ReadBool(file, "ESP.bShowInfantry", true);
+        g_Settings.ESP.bShowMAX = ReadBool(file, "ESP.bShowMAX", true);
+        g_Settings.ESP.bShowGroundVehicles = ReadBool(file, "ESP.bShowGroundVehicles", true);
+        g_Settings.ESP.bShowAirVehicles = ReadBool(file, "ESP.bShowAirVehicles", true);
+        g_Settings.ESP.bShowTurrets = ReadBool(file, "ESP.bShowTurrets", true);
+        g_Settings.ESP.bShowOthers = ReadBool(file, "ESP.bShowOthers", false);
         
         // Load ESP Colors
         float defaultVS[4] = {0.5f, 0.0f, 1.0f, 1.0f};
@@ -55,7 +61,7 @@ bool SettingsManager::LoadSettings() {
         
         // Load MagicBullet settings
         g_Settings.MagicBullet.bEnabled = ReadBool(file, "MagicBullet.bEnabled", false);
-        g_Settings.MagicBullet.bTargetHead = ReadBool(file, "MagicBullet.bTargetHead", true);
+        // Removed: MagicBullet.bTargetHead (always head)
         
         // Load Misc settings
         g_Settings.Misc.bShowFPS = ReadBool(file, "Misc.bShowFPS", true);
@@ -65,6 +71,9 @@ bool SettingsManager::LoadSettings() {
         g_Settings.Misc.bNoRecoil = ReadBool(file, "Misc.bNoRecoil", false);
         g_Settings.Misc.NoRecoil.bEnabled = ReadBool(file, "Misc.NoRecoil.bEnabled", false);
         g_Settings.Misc.NoRecoil.iStrength = ReadInt(file, "Misc.NoRecoil.iStrength", 10);
+        g_Settings.Misc.bShowRadar = ReadBool(file, "Misc.bShowRadar", false);
+        g_Settings.Misc.fRadarSize = ReadFloat(file, "Misc.fRadarSize", 180.0f);
+        g_Settings.Misc.fRadarZoom = ReadFloat(file, "Misc.fRadarZoom", 1.0f);
         
         // Load Aimbot settings
         g_Settings.Aimbot.bEnabled = ReadBool(file, "Aimbot.bEnabled", false);
@@ -117,6 +126,12 @@ bool SettingsManager::SaveSettings() {
         WriteBool(file, "ESP.bBulletESP", g_Settings.ESP.bBulletESP);
         WriteBool(file, "ESP.bTeamESP", g_Settings.ESP.bTeamESP);
         WriteFloat(file, "ESP.fMaxDistance", g_Settings.ESP.fMaxDistance);
+        WriteBool(file, "ESP.bShowInfantry", g_Settings.ESP.bShowInfantry);
+        WriteBool(file, "ESP.bShowMAX", g_Settings.ESP.bShowMAX);
+        WriteBool(file, "ESP.bShowGroundVehicles", g_Settings.ESP.bShowGroundVehicles);
+        WriteBool(file, "ESP.bShowAirVehicles", g_Settings.ESP.bShowAirVehicles);
+        WriteBool(file, "ESP.bShowTurrets", g_Settings.ESP.bShowTurrets);
+        WriteBool(file, "ESP.bShowOthers", g_Settings.ESP.bShowOthers);
         WriteColor(file, "ESP.Colors.VS", g_Settings.ESP.Colors.VS);
         WriteColor(file, "ESP.Colors.NC", g_Settings.ESP.Colors.NC);
         WriteColor(file, "ESP.Colors.TR", g_Settings.ESP.Colors.TR);
@@ -142,7 +157,7 @@ bool SettingsManager::SaveSettings() {
         // Save MagicBullet settings
         file << "[MagicBullet]\n";
         WriteBool(file, "MagicBullet.bEnabled", g_Settings.MagicBullet.bEnabled);
-        WriteBool(file, "MagicBullet.bTargetHead", g_Settings.MagicBullet.bTargetHead);
+        // Removed: MagicBullet.bTargetHead (always head)
         file << "\n";
         
         // Save Misc settings
@@ -154,6 +169,9 @@ bool SettingsManager::SaveSettings() {
         WriteBool(file, "Misc.bNoRecoil", g_Settings.Misc.bNoRecoil);
         WriteBool(file, "Misc.NoRecoil.bEnabled", g_Settings.Misc.NoRecoil.bEnabled);
         WriteInt(file, "Misc.NoRecoil.iStrength", g_Settings.Misc.NoRecoil.iStrength);
+        WriteBool(file, "Misc.bShowRadar", g_Settings.Misc.bShowRadar);
+        WriteFloat(file, "Misc.fRadarSize", g_Settings.Misc.fRadarSize);
+        WriteFloat(file, "Misc.fRadarZoom", g_Settings.Misc.fRadarZoom);
         file << "\n";
         
         // Save Aimbot settings

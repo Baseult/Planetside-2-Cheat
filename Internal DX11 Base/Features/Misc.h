@@ -27,6 +27,7 @@ private:
     void DrawTargetInfoPanel(); // NEW: Target info panel
     void DrawMagicBulletInfo(); // NEW: Magic Bullet visualization
     void DrawPerformanceInfo();
+    void DrawRadar(); // NEW: Radar/minimap overlay
     
     // Update functions
     void CalculateFPS();

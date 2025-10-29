@@ -45,6 +45,13 @@ struct Settings {
         bool bTeamESP = false;        ///< Show team members
         bool bViewDirection = false;   ///< Show view direction lines
         float fMaxDistance = 500.0f;   ///< Maximum ESP distance
+        // Fine-grained entity filters
+        bool bShowInfantry = true;     ///< Show infantry (non-MAX)
+        bool bShowMAX = true;          ///< Show MAX units
+        bool bShowGroundVehicles = true; ///< Show ground vehicles
+        bool bShowAirVehicles = true;  ///< Show air vehicles
+        bool bShowTurrets = true;      ///< Show turrets
+        bool bShowOthers = false;      ///< Show utilities/mines/others
         
         /**
          * @brief Color settings for different factions
@@ -79,8 +86,6 @@ struct Settings {
     
     struct MagicBullet_t {
         bool bEnabled = false;
-        // Targeting settings removed - now centralized in Targeting_t
-        bool bTargetHead = true;
     } MagicBullet;
     
     struct Misc_t {
@@ -89,6 +94,10 @@ struct Settings {
         bool bShowCrosshair = false;
         bool bShowTargetInfo = true;
         bool bNoRecoil = false;
+        // Radar/Minimap
+        bool bShowRadar = false;     // Show radar overlay (top-right)
+        float fRadarSize = 180.0f;   // Size in pixels (square)
+        float fRadarZoom = 1.0f;     // Zoom factor
         
         // No Recoil settings
         struct NoRecoil_t {

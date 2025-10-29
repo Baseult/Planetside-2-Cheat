@@ -139,6 +139,14 @@ namespace DX11Base {
 					ImGui::Checkbox("Bullet ESP", &g_Settings.ESP.bBulletESP);
 					ImGui::Checkbox("Team ESP", &g_Settings.ESP.bTeamESP);
 					ImGui::Checkbox("View Direction", &g_Settings.ESP.bViewDirection);
+					ImGui::Separator();
+					ImGui::Text("Entity Filter:");
+					ImGui::Checkbox("Infantry", &g_Settings.ESP.bShowInfantry);
+					ImGui::SameLine(); ImGui::Checkbox("MAX", &g_Settings.ESP.bShowMAX);
+					ImGui::Checkbox("Ground Vehicles", &g_Settings.ESP.bShowGroundVehicles);
+					ImGui::Checkbox("Air Vehicles", &g_Settings.ESP.bShowAirVehicles);
+					ImGui::Checkbox("Turrets", &g_Settings.ESP.bShowTurrets);
+					ImGui::Checkbox("Others (Mines/Utility)", &g_Settings.ESP.bShowOthers);
 
 					ImGui::Separator();
 					ImGui::SliderFloat("Max Distance", &g_Settings.ESP.fMaxDistance, 50.0f, 1000.0f, "%.0f m");
@@ -325,9 +333,7 @@ namespace DX11Base {
 					
 					ImGui::Checkbox("Enable Magic Bullet", &g_Settings.MagicBullet.bEnabled);
 					ImGui::Separator();
-					ImGui::Checkbox("Target Head", &g_Settings.MagicBullet.bTargetHead);
-					
-					ImGui::Separator();
+                    ImGui::Separator();
 					if (g_MagicBullet) {
 						ImGui::Text("Active Bullets: %d", g_MagicBullet->GetActiveBullets());
 						ImGui::Text("Update Time: %.3fms", g_MagicBullet->GetUpdateTime());
@@ -351,6 +357,14 @@ namespace DX11Base {
 					ImGui::Checkbox("No Recoil", &g_Settings.Misc.NoRecoil.bEnabled);
 					if (g_Settings.Misc.NoRecoil.bEnabled) {
 						ImGui::SliderInt("Strength", &g_Settings.Misc.NoRecoil.iStrength, 1, 100, "%d");
+					}
+
+					ImGui::Separator();
+					ImGui::Text("Radar/Minimap:");
+					ImGui::Checkbox("Show Radar (top-right)", &g_Settings.Misc.bShowRadar);
+					if (g_Settings.Misc.bShowRadar) {
+						ImGui::SliderFloat("Size", &g_Settings.Misc.fRadarSize, 120.0f, 300.0f, "%.0f px");
+						ImGui::SliderFloat("Zoom", &g_Settings.Misc.fRadarZoom, 0.5f, 3.0f, "%.1f x");
 					}
 					
 					ImGui::EndTabItem();

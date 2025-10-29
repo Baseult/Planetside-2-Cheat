@@ -76,6 +76,23 @@ void ESP::Render() {
         // Never draw entities below Y position 5 (bugged entities)
         if (entity.position.y < 5.0f) continue;
 
+        // Fine-grained filters
+        if (IsPlayerType(entity.type)) {
+            if (IsMAXUnit(entity.type)) {
+                if (!g_Settings.ESP.bShowMAX) continue;
+            } else {
+                if (!g_Settings.ESP.bShowInfantry) continue;
+            }
+        } else if (IsGroundVehicleType(entity.type)) {
+            if (!g_Settings.ESP.bShowGroundVehicles) continue;
+        } else if (IsAirVehicleType(entity.type)) {
+            if (!g_Settings.ESP.bShowAirVehicles) continue;
+        } else if (IsTurretType(entity.type)) {
+            if (!g_Settings.ESP.bShowTurrets) continue;
+        } else if (IsOthersType(entity.type)) {
+            if (!g_Settings.ESP.bShowOthers) continue;
+        }
+
         bool isTarget = targetOpt && targetOpt->id == entity.id;
         if (isTarget) continue; // Targets are drawn later
 

@@ -78,19 +78,13 @@ void MagicBullet::ManipulateFreshBullets() {
 
     const EntitySnapshot& currentTarget = *targetOpt;
     
-    // Calculate correct target position based on entity type and settings
+    // Calculate correct target position: always aim at head (no toggle)
     Utils::Vector3 targetPos;
-    if (g_Settings.MagicBullet.bTargetHead) {
-        if (IsMAXUnit(currentTarget.type)) {
-            // For MAX units, use entity position + AIMBOT_MAX_HEAD_HEIGHT (same as aimbot)
-            targetPos = currentTarget.position;
-            targetPos.y += Offsets::GameConstants::AIMBOT_MAX_HEAD_HEIGHT;
-        } else {
-            // For normal players, use the calculated headPosition
-            targetPos = currentTarget.headPosition;
-        }
-    } else {
+    if (IsMAXUnit(currentTarget.type)) {
         targetPos = currentTarget.position;
+        targetPos.y += Offsets::GameConstants::AIMBOT_MAX_HEAD_HEIGHT;
+    } else {
+        targetPos = currentTarget.headPosition;
     }
 
     auto bulletSnapshot = g_BulletHarvester->GetBulletSnapshot();
@@ -131,19 +125,13 @@ void MagicBullet::ManipulateBullet(const BulletSnapshot& bullet, const Utils::Ve
     
     const EntitySnapshot& currentTarget = *targetOpt;
     
-    // Calculate correct target head position based on entity type and settings
+    // Calculate target head position: always head (no toggle)
     Utils::Vector3 targetHeadPos;
-    if (g_Settings.MagicBullet.bTargetHead) {
-        if (IsMAXUnit(currentTarget.type)) {
-            // For MAX units, use entity position + AIMBOT_MAX_HEAD_HEIGHT (same as aimbot)
-            targetHeadPos = currentTarget.position;
-            targetHeadPos.y += Offsets::GameConstants::AIMBOT_MAX_HEAD_HEIGHT;
-        } else {
-            // For normal players, use the calculated headPosition
-            targetHeadPos = currentTarget.headPosition;
-        }
-    } else {
+    if (IsMAXUnit(currentTarget.type)) {
         targetHeadPos = currentTarget.position;
+        targetHeadPos.y += Offsets::GameConstants::AIMBOT_MAX_HEAD_HEIGHT;
+    } else {
+        targetHeadPos = currentTarget.headPosition;
     }
     
     // Now manipulate with view direction...

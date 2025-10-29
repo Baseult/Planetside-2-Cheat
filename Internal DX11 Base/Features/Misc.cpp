@@ -10,6 +10,16 @@
 #include "ESP.h"
 #include "MagicBullet.h"
 #include "../Game/Game.h"
+#include "../Game/Offsets.h"
+#include <cmath>
+
+#ifndef M_PI
+#define M_PI 3.14159265358979323846
+#endif
+
+static inline float ClampFloat(float v, float lo, float hi) {
+    return (v < lo) ? lo : ((v > hi) ? hi : v);
+}
 
 Misc::Misc() {
     Logger::Log("Misc class created");
@@ -42,6 +52,10 @@ void Misc::Render() {
     }
     
     DrawMagicBulletInfo();
+    
+    if (g_Settings.Misc.bShowRadar) {
+        DrawRadar();
+    }
     
     DrawPerformanceInfo();
 }
@@ -250,4 +264,84 @@ void Misc::DrawTargetInfoPanel() {
 void Misc::DrawMagicBulletInfo() {
     if (!g_Settings.MagicBullet.bEnabled) return;
     
+}
+
+void Misc::DrawRadar() {
+    if (!g_Game || !g_Renderer) return;
+    auto world = g_Game->GetWorldSnapshot();
+    if (!world || !world->localPlayer.isValid) return;
+
+    // Radar placement (top-right)
+    const float size = g_Settings.Misc.fRadarSize;
+    const float half = size * 0.5f;
+    const float margin = 10.0f;
+    Utils::Vector2 screen = g_Renderer->GetScreenSize();
+    Utils::Vector2 topLeft = { screen.x - size - margin, margin };
+    Utils::Vector2 center = { topLeft.x + half, topLeft.y + half };
+
+    // Background
+    const float bg[4] = { 0.0f, 0.0f, 0.0f, 0.4f };
+    const float border[4] = { 1.0f, 1.0f, 1.0f, 0.8f };
+    g_Renderer->DrawRoundedFilledBox(topLeft, size, size, bg, 4.0f);
+    g_Renderer->DrawBox(topLeft, size, size, border, 1.5f);
+
+    // Cross lines
+    g_Renderer->DrawLine({ center.x, topLeft.y }, { center.x, topLeft.y + size }, border, 1.0f);
+    g_Renderer->DrawLine({ topLeft.x, center.y }, { topLeft.x + size, center.y }, border, 1.0f);
+
+    // Orientation: rotate by local yaw to keep forward up
+    const float yaw = world->localPlayer.viewAngles.x; // matches usage elsewhere
+    const float rotationAngle = yaw + Offsets::GameConstants::ROTATION_OFFSET - (float)(M_PI / 2.0);
+    const float cosA = std::cos(-rotationAngle); // inverse to rotate world into radar space
+    const float sinA = std::sin(-rotationAngle);
+
+    float zoom = g_Settings.Misc.fRadarZoom;
+    if (zoom < 0.1f) zoom = 0.1f;
+    const float metersPerPixel = 2.0f / zoom; // tune scale
+
+    auto drawEntityPoint = [&](const EntitySnapshot& e, const float* color) {
+        Utils::Vector3 delta = e.position - world->localPlayer.position;
+        // Map X/Z to radar plane
+        float rx = delta.x;
+        float ry = delta.z;
+        // rotate
+        float x = rx * cosA - ry * sinA;
+        float y = rx * sinA + ry * cosA;
+        x /= metersPerPixel;
+        y /= metersPerPixel;
+        // clamp to box
+        x = ClampFloat(x, -half + 2.0f, half - 2.0f);
+        y = ClampFloat(y, -half + 2.0f, half - 2.0f);
+        Utils::Vector2 p = { center.x + x, center.y - y };
+        g_Renderer->DrawFilledCircle(p, 2.0f, color);
+    };
+
+    // Draw entities with same filters as ESP
+    for (const auto& e : world->entities) {
+        if (!e.isAlive) continue;
+        if (!g_Settings.ESP.bTeamESP && e.team == world->localPlayer.team && e.team != EFaction::NSO) continue;
+        if (e.distanceToLocalPlayer > g_Settings.ESP.fMaxDistance) continue;
+
+        // Filters
+        if (IsPlayerType(e.type)) {
+            if (IsMAXUnit(e.type)) { if (!g_Settings.ESP.bShowMAX) continue; }
+            else { if (!g_Settings.ESP.bShowInfantry) continue; }
+        } else if (IsGroundVehicleType(e.type)) { if (!g_Settings.ESP.bShowGroundVehicles) continue; }
+        else if (IsAirVehicleType(e.type)) { if (!g_Settings.ESP.bShowAirVehicles) continue; }
+        else if (IsTurretType(e.type)) { if (!g_Settings.ESP.bShowTurrets) continue; }
+        else if (IsOthersType(e.type)) { if (!g_Settings.ESP.bShowOthers) continue; }
+
+        const float* color = g_Settings.ESP.Colors.VS;
+        switch (e.team) {
+        case EFaction::VS: color = g_Settings.ESP.Colors.VS; break;
+        case EFaction::NC: color = g_Settings.ESP.Colors.NC; break;
+        case EFaction::TR: color = g_Settings.ESP.Colors.TR; break;
+        case EFaction::NSO: color = g_Settings.ESP.Colors.NSO; break;
+        }
+        drawEntityPoint(e, color);
+    }
+
+    // Local player marker
+    const float selfColor[4] = { 1.0f, 0.8f, 0.0f, 1.0f };
+    g_Renderer->DrawFilledCircle(center, 3.0f, selfColor);
 }
