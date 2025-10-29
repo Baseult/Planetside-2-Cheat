@@ -33,17 +33,13 @@ namespace DX11Base
 	{
 		if (g_Engine->bShowMenu) 
 		{
-			// Call ImGui input handler
 			ImGui_ImplWin32_WndProcHandler(hWnd, msg, wParam, lParam);
 			
-			// Check if ImGui processed the message
 			ImGuiIO& io = ImGui::GetIO();
 			if (io.WantCaptureMouse || io.WantCaptureKeyboard) {
-				return true; // ImGui processed the message
+				return true;
 			}
 		}
-		
-		// Call normal window procedure
 		return CallWindowProc((WNDPROC)g_D3D11Window->m_OldWndProc, hWnd, msg, wParam, lParam);
 	}
 
@@ -56,15 +52,11 @@ namespace DX11Base
 
 	HRESULT APIENTRY D3D11Window::SwapChain_ResizeBuffers_hook(IDXGISwapChain* p, UINT bufferCount, UINT Width, UINT Height, DXGI_FORMAT fmt, UINT scFlags)
 	{
-		// Get new data and release render target
 		g_D3D11Window->m_pSwapChain = p;
 		g_D3D11Window->m_RenderTargetView->Release();
 		g_D3D11Window->m_RenderTargetView = nullptr;
 
-		// Get function result
 		HRESULT result = g_D3D11Window->IDXGISwapChain_ResizeBuffers_stub(p, bufferCount, Width, Height, fmt, scFlags);
-
-		// Get new render target
 		ID3D11Texture2D* backBuffer;
 		p->GetBuffer(0, __uuidof(ID3D11Texture2D*), (LPVOID*)&backBuffer);
 		if (backBuffer)
@@ -73,7 +65,6 @@ namespace DX11Base
 			backBuffer->Release();
 		}
 
-		// Reset ImGui 
 		if (g_D3D11Window->bInitImGui)
 		{
 			ImGuiIO& io = ImGui::GetIO();
@@ -246,22 +237,18 @@ namespace DX11Base
 		ImGui::NewFrame();
 		ImGui::GetIO().MouseDrawCursor = g_Engine->bShowMenu;
 
-		// Initialize renderer for this frame
 		if (g_Renderer) {
 			g_Renderer->Initialize(ImGui::GetBackgroundDrawList(), ImGui::GetIO().DisplaySize);
 		}
 		
-		// Render ESP (even when menu is closed!)
 		if (g_ESP) {
 			g_ESP->Render();
 		}
 		
-		// Render misc features (FPS, FOV Circle, etc.)
 		if (g_Misc) {
 			g_Misc->Render();
 		}
 		
-		// Menu only when visible
 		Menu::Render();
 
 		ImGui::EndFrame();

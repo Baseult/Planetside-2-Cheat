@@ -31,7 +31,7 @@ enum class EntityType : uint8_t
 {
     Unknown = 0,
 
-    Citizen = 1,
+    //Citizen = 1,
     NC_Infiltrator = 2,
     NC_LightAssault = 4,
     NC_CombatMedic = 5,
@@ -51,7 +51,7 @@ enum class EntityType : uint8_t
     VS_HeavyAssault = 22,
     VS_MAX = 23,
     
-    Soldier = 253,
+    //Soldier = 253,
 
     Flash = 24,
     Lightning = 26,
@@ -119,7 +119,7 @@ inline bool IsPlayerType(EntityType type)
     switch (type)
     {
         // All infantry types
-    case EntityType::Citizen:
+    //case EntityType::Citizen:
     case EntityType::NC_Infiltrator:
     case EntityType::NC_LightAssault:
     case EntityType::NC_CombatMedic:
@@ -144,7 +144,7 @@ inline bool IsPlayerType(EntityType type)
     case EntityType::NS_Engineer:
     case EntityType::NS_HeavyAssault:
     case EntityType::NS_MAX:
-    case EntityType::Soldier:
+    //case EntityType::Soldier:
         return true;
 
     default:
@@ -285,7 +285,7 @@ inline bool IsMAXUnit(EntityType type) {
 inline bool IsKnownEntityType(EntityType type) {
     switch (type) {
         // Player Classes
-    case EntityType::Citizen:
+    //case EntityType::Citizen:
     case EntityType::NC_Infiltrator:
     case EntityType::NC_LightAssault:
     case EntityType::NC_CombatMedic:
@@ -310,7 +310,7 @@ inline bool IsKnownEntityType(EntityType type) {
     case EntityType::NS_Engineer:
     case EntityType::NS_HeavyAssault:
     case EntityType::NS_MAX:
-    case EntityType::Soldier:
+    //case EntityType::Soldier:
 
         // Vehicles
     case EntityType::Flash:
@@ -373,7 +373,7 @@ inline bool IsKnownEntityType(EntityType type) {
 inline std::string GetEntityTypeString(EntityType type) {
     switch (type) {
         // Player Classes
-    case EntityType::Citizen: return "Citizen";
+    //case EntityType::Citizen: return "Citizen";
     case EntityType::NC_Infiltrator: return "NC Infiltrator";
     case EntityType::NC_LightAssault: return "NC Light Assault";
     case EntityType::NC_CombatMedic: return "NC Medic";
@@ -398,7 +398,7 @@ inline std::string GetEntityTypeString(EntityType type) {
     case EntityType::NS_Engineer: return "NS Engineer";
     case EntityType::NS_HeavyAssault: return "NS Heavy";
     case EntityType::NS_MAX: return "NS MAX";
-    case EntityType::Soldier: return "Soldier";
+    //case EntityType::Soldier: return "Soldier";
 
         // Ground Vehicles
     case EntityType::Flash: return "Flash";

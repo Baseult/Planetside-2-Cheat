@@ -258,6 +258,18 @@ const EntitySnapshot* TargetManager::FindTargetByName(const WorldSnapshot& world
         if (entity.health <= 0.0f) continue;
         if (entity.distanceToLocalPlayer > g_Settings.Targeting.fMaxDistance) continue;
         
+        // Never target entities with unknown/invalid team
+        if (entity.team != EFaction::VS && entity.team != EFaction::NC && 
+            entity.team != EFaction::TR && entity.team != EFaction::NSO) {
+            continue;
+        }
+        
+        // Never target entities below Y position 5 (bugged entities)
+        if (entity.position.y < 5.0f) continue;
+        
+        // Ignore NS if enabled
+        if (g_Settings.Targeting.bIgnoreNS && entity.team == EFaction::NSO) continue;
+        
         // Ignore team check for name-based search (find any player with the name)
         // Ignore MAX Units check for name-based search
         
@@ -276,7 +288,15 @@ bool TargetManager::IsValidTarget(const EntitySnapshot& entity, const LocalPlaye
     if (entity.type == EntityType::Unknown) return false;
     if (entity.health <= 0.0f) return false;
     
-    // NUTZT VORAUSBERECHNETE DISTANZ!
+    // Never target entities with unknown/invalid team
+    if (entity.team != EFaction::VS && entity.team != EFaction::NC && 
+        entity.team != EFaction::TR && entity.team != EFaction::NSO) {
+        return false;
+    }
+    
+    // Never target entities below Y position 5 (bugged entities)
+    if (entity.position.y < 5.0f) return false;
+    
     if (entity.distanceToLocalPlayer > g_Settings.Targeting.fMaxDistance) return false;
     
     if (!g_Settings.Targeting.bTargetTeam && !entity.IsEnemy(localPlayer.team) && entity.team != EFaction::NSO) {
@@ -284,6 +304,10 @@ bool TargetManager::IsValidTarget(const EntitySnapshot& entity, const LocalPlaye
     }
     
     if (g_Settings.Targeting.bIgnoreMaxUnits && IsMAXUnit(entity.type)) return false;
+    
+    if (g_Settings.Targeting.bIgnoreVehicles && (IsGroundVehicleType(entity.type) || IsAirVehicleType(entity.type) || IsTurretType(entity.type))) return false;
+    
+    if (g_Settings.Targeting.bIgnoreNS && entity.team == EFaction::NSO) return false;
     
     return true;
 }

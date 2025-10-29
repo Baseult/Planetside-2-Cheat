@@ -18,11 +18,15 @@
 #include <cstdio>
 #include <cstdint>
 
+
+#ifndef M_PI
+#define M_PI 3.14159265358979323846
+#endif
+
 ESP::ESP() {
     Logger::Log("ESP class created");
 }
 
-// Initialize static member
 std::set<std::string> ESP::s_loggedUnknownEntities;
 
 ESP::~ESP() {
@@ -62,6 +66,15 @@ void ESP::Render() {
         if (!entity.isAlive || !entity.isOnScreen) continue;
         if (entity.distanceToLocalPlayer > g_Settings.ESP.fMaxDistance) continue;
         if (!g_Settings.ESP.bTeamESP && entity.team == worldSnapshot->localPlayer.team && entity.team != EFaction::NSO) continue;
+        
+        // Never draw entities with unknown/invalid team
+        if (entity.team != EFaction::VS && entity.team != EFaction::NC && 
+            entity.team != EFaction::TR && entity.team != EFaction::NSO) {
+            continue;
+        }
+        
+        // Never draw entities below Y position 5 (bugged entities)
+        if (entity.position.y < 5.0f) continue;
 
         bool isTarget = targetOpt && targetOpt->id == entity.id;
         if (isTarget) continue; // Targets are drawn later
@@ -72,18 +85,38 @@ void ESP::Render() {
         else if (IsAirVehicleType(entity.type)) DrawAirVehicleESP(entity, entity.feetScreenPos, alpha, targetOpt);
         else if (IsTurretType(entity.type)) DrawTurretESP(entity, entity.feetScreenPos, alpha, targetOpt);
         else if (IsOthersType(entity.type)) DrawOthersESP(entity, entity.feetScreenPos, alpha, targetOpt);
+        
+        // Draw view direction if enabled
+        if (g_Settings.ESP.bViewDirection) {
+            DrawViewDirection(entity);
+        }
+        
         m_renderedEntities++;
     }
 
     if (targetOpt) {
         const EntitySnapshot& target = *targetOpt;
         if (target.isAlive && target.isOnScreen) {
+            // Never draw targets with unknown/invalid team
+            if (target.team != EFaction::VS && target.team != EFaction::NC && 
+                target.team != EFaction::TR && target.team != EFaction::NSO) {
+                return;
+            }
+            
+            // Never draw targets below Y position 5 (bugged entities)
+            if (target.position.y < 5.0f) return;
             float alpha = 1.0f;
             if (IsPlayerType(target.type)) DrawPlayerESP(target, target.feetScreenPos, target.headScreenPos, alpha, targetOpt);
             else if (IsGroundVehicleType(target.type)) DrawGroundVehicleESP(target, target.feetScreenPos, alpha, targetOpt);
             else if (IsAirVehicleType(target.type)) DrawAirVehicleESP(target, target.feetScreenPos, alpha, targetOpt);
             else if (IsTurretType(target.type)) DrawTurretESP(target, target.feetScreenPos, alpha, targetOpt);
             else if (IsOthersType(target.type)) DrawOthersESP(target, target.feetScreenPos, alpha, targetOpt);
+            
+            // Draw view direction for target if enabled
+            if (g_Settings.ESP.bViewDirection) {
+                DrawViewDirection(target);
+            }
+            
              m_renderedEntities++;
         }
     }
@@ -799,4 +832,52 @@ void ESP::DrawHexagonWithBorder(const Utils::Vector2& center, float size, const 
         g_Renderer->DrawLine(current, next, blackBorder, 3.0f);
         g_Renderer->DrawLine(current, next, colorWithAlpha, 2.0f);
     }
+}
+
+void ESP::DrawViewDirection(const EntitySnapshot& entity) {
+    if (!g_Game || !g_Renderer) return;
+
+    // =======================================================================
+    // == DIES IST DIE KORREKTE, NACHGEWIESENE LOGIK AUS DEINEM NOCLIP-CODE ==
+    // =======================================================================
+
+    // 1. Nimm den rohen Yaw-Wert.
+    float yaw = entity.viewAngle.x;
+
+    // 2. Wende die exakt gleiche Winkelkorrektur an wie in Noclip und ReadHeadPosition.
+    float rotationAngle = yaw + Offsets::GameConstants::ROTATION_OFFSET - (float)(M_PI / 2.0);
+
+    // 3. Berechne Sinus und Cosinus des korrigierten Winkels.
+    float cos_angle = std::cos(rotationAngle);
+    float sin_angle = std::sin(rotationAngle);
+
+    // 4. Erstelle den Richtungsvektor durch Rotation des Basis-Vektors (0, 0, 1).
+    // Dies ist die vereinfachte Form der Matrix aus deinem Noclip-Code.
+    Utils::Vector3 direction;
+    direction.x = sin_angle;
+    direction.y = 0.0f;
+    direction.z = cos_angle;
+
+    // Normalisieren ist gute Praxis, obwohl der Vektor bereits Länge 1 haben sollte.
+    direction = direction.Normalized();
+
+    // =======================================================================
+    // == Der Rest des Codes bleibt gleich ==
+    // =======================================================================
+
+    // Startpunkt ist die Kopfposition
+    Utils::Vector3 startPosition = entity.headPosition;
+    
+    // Endpunkt ist 2 Meter in Blickrichtung
+    Utils::Vector3 endPosition = startPosition + (direction * 2.0f);
+
+    // Auf den Bildschirm projizieren und zeichnen
+    Utils::Vector2 startScreen, endScreen;
+    if (!g_Game->WorldToScreen(startPosition, startScreen) || 
+        !g_Game->WorldToScreen(endPosition, endScreen)) {
+        return;
+    }
+
+    const float* color = GetTeamColor(entity.team);
+    g_Renderer->DrawLine(startScreen, endScreen, color, 2.0f);
 }

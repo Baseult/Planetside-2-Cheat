@@ -43,6 +43,7 @@ struct Settings {
         bool bHighlightTarget = true;  ///< Highlight current target
         bool bBulletESP = false;       ///< Show bullet ESP
         bool bTeamESP = false;        ///< Show team members
+        bool bViewDirection = false;   ///< Show view direction lines
         float fMaxDistance = 500.0f;   ///< Maximum ESP distance
         
         /**
@@ -73,6 +74,7 @@ struct Settings {
         // Target filters (moved from MagicBullet)
         bool bIgnoreMaxUnits = true;
         bool bIgnoreVehicles = true;
+        bool bIgnoreNS = true;  // Don't target NSO (Nanite Systems)
     } Targeting;
     
     struct MagicBullet_t {
@@ -97,11 +99,11 @@ struct Settings {
     
     struct Aimbot_t {
         bool bEnabled = false;
-        float fSmoothing = 5.0f;       // 1.0 = fast, 20.0 = sehr smooth
-        bool bUseHotkey = false;       // Hotkey-Aktivierung
-        int iHotkey = VK_RBUTTON;      // Standard: Rechte Maustaste
+        float fSmoothing = 5.0f;       // 1.0 = fast, 20.0 = very smooth
+        bool bUseHotkey = false;       // Hotkey activation
+        int iHotkey = VK_RBUTTON;      // Default: Right mouse button
         bool bAutoAim = true;          // Automatically when shooting
-        bool bWaitingForHotkey = false; // Hotkey-Auswahl aktiv
+        bool bWaitingForHotkey = false; // Hotkey selection active
         
         // Advanced
         float fMaxDistance = 300.0f;   // Max Aim Distance
@@ -111,9 +113,9 @@ struct Settings {
     struct Noclip_t {
         bool bEnabled = false;
         float fSpeed = 0.2f;  // Movement speed per frame
-        bool bUseHotkey = false;       // Hotkey-Aktivierung
-        int iHotkey = VK_F1;           // Standard: F1
-        bool bWaitingForHotkey = false; // Hotkey-Auswahl aktiv
+        bool bUseHotkey = false;       // Hotkey activation
+        int iHotkey = VK_F1;           // Default: F1
+        bool bWaitingForHotkey = false; // Hotkey selection active
         // Note: Direct memory access - no coordinate conversion needed!
         // Reading/Writing Double values directly from memory
     } Noclip;

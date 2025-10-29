@@ -6,7 +6,6 @@
 #include "../Renderer/Renderer.h"
 
 Game::Game() {
-    // Initialisiere shared_ptr Snapshots
     m_snapshot_front = std::make_shared<const WorldSnapshot>();
     m_snapshot_back = std::make_unique<WorldSnapshot>();
     
@@ -19,7 +18,6 @@ Game::~Game() {
     try {
         Shutdown();
     } catch (...) {
-        // Ignore errors in destructor - prevents crashes during shutdown
     }
 }
 
@@ -202,9 +200,8 @@ void Game::ReadEntityList() {
             m_memory->Read(currentEntityPtr + Offsets::Entity::TeamID, teamValue);
             snapshot.team = static_cast<EFaction>(teamValue);
             
-            if (IsPlayerType(snapshot.type)) {
-                snapshot.viewAngle = m_memory->ReadVector3(currentEntityPtr + Offsets::Entity::ViewAngle);
-            }
+            // Read view angle for all entity types (not just players)
+            snapshot.viewAngle = m_memory->ReadVector3(currentEntityPtr + Offsets::Entity::ViewAngle);
             
             snapshot.headPosition = snapshot.position;
             snapshot.headPosition.y += Offsets::GameConstants::DEFAULT_HEAD_HEIGHT;
@@ -273,7 +270,6 @@ void Game::ReadEntityList() {
 }
 
 void Game::ReadLocalPlayer() {
-    // ✅ PERFORMANCE: Use cached baseAddress instead of calling GetBaseAddress() every frame
     if (!m_baseAddressInitialized) {
         m_cachedBaseAddress = m_memory->GetBaseAddress();
         m_baseAddressInitialized = true;
@@ -314,7 +310,6 @@ void Game::ReadLocalPlayer() {
 }
 
 void Game::ReadViewMatrix() {
-    // OPTIMIZATION: Use cache for ViewMatrix
     {
         std::lock_guard<std::mutex> lock(m_cacheMutex);
         if (m_addressCache.IsValid() && m_addressCache.matrixAddress != 0) {

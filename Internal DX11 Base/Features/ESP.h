@@ -79,6 +79,7 @@ private:
     void DrawBulletESP();
     void DrawGMDetection();
     void DrawCentralGMWarning(int gmCount);
+    void DrawViewDirection(const EntitySnapshot& entity);
 
     // Bullet tracking
     void UpdateBulletTracking();

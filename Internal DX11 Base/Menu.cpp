@@ -11,7 +11,6 @@
 #include "Utils/SettingsManager.h"
 #include <algorithm>
 
-// Helper functions for Aimbot menu
 const char* GetTargetModeName() {
     switch (g_Settings.Targeting.Mode) {
         case ETargetingMode::FOV: return "FOV";
@@ -139,6 +138,7 @@ namespace DX11Base {
 					ImGui::Checkbox("Distance", &g_Settings.ESP.bShowDistance);
 					ImGui::Checkbox("Bullet ESP", &g_Settings.ESP.bBulletESP);
 					ImGui::Checkbox("Team ESP", &g_Settings.ESP.bTeamESP);
+					ImGui::Checkbox("View Direction", &g_Settings.ESP.bViewDirection);
 
 					ImGui::Separator();
 					ImGui::SliderFloat("Max Distance", &g_Settings.ESP.fMaxDistance, 50.0f, 1000.0f, "%.0f m");
@@ -205,6 +205,13 @@ namespace DX11Base {
 						ImGui::SliderFloat("FOV Radius", &g_Settings.Targeting.fFOV, 10.0f, 500.0f, "%.0f px");
 					}
 					
+					ImGui::SliderFloat("Max Distance", &g_Settings.Targeting.fMaxDistance, 50.0f, 1000.0f, "%.0f m");
+					ImGui::SameLine();
+					ImGui::TextDisabled("(?)");
+					if (ImGui::IsItemHovered()) {
+						ImGui::SetTooltip("Maximum distance for targeting (entities beyond this won't be targeted)");
+					}
+					
 					ImGui::Separator();
 					ImGui::Text("Target Filters:");
 					ImGui::Checkbox("Target Team", &g_Settings.Targeting.bTargetTeam);
@@ -226,6 +233,13 @@ namespace DX11Base {
 					ImGui::TextDisabled("(?)");
 					if (ImGui::IsItemHovered()) {
 						ImGui::SetTooltip("Don't target vehicles (tanks, aircraft, etc.)");
+					}
+					
+					ImGui::Checkbox("Don't Target NS", &g_Settings.Targeting.bIgnoreNS);
+					ImGui::SameLine();
+					ImGui::TextDisabled("(?)");
+					if (ImGui::IsItemHovered()) {
+						ImGui::SetTooltip("Don't target NSO (Nanite Systems) players");
 					}
 					
 					ImGui::Separator();

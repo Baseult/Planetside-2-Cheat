@@ -6,6 +6,8 @@
 #include "../Utils/Settings.h"
 #include "../Renderer/Renderer.h"
 #include <Windows.h>
+#include <future>
+#include <chrono>
 
 BulletHarvester::BulletHarvester() : m_isRunning(true) {
     m_snapshot_front = std::make_shared<const BulletWorldSnapshot>();
@@ -28,10 +30,21 @@ BulletHarvester::~BulletHarvester() {
         m_updateThread.join();
         Logger::Log("UpdateThread joined successfully.");
     }
+    
     if (m_collectBulletsThread.joinable()) {
         Logger::Log("Joining CollectBulletsThread...");
-        m_collectBulletsThread.join();
-        Logger::Log("CollectBulletsThread joined successfully.");
+        
+        // Use a timeout for CollectBulletsThread join
+        auto future = std::async(std::launch::async, [this]() {
+            m_collectBulletsThread.join();
+        });
+        
+        if (future.wait_for(std::chrono::seconds(2)) == std::future_status::timeout) {
+            Logger::Log("CollectBulletsThread join timed out, detaching thread...");
+            m_collectBulletsThread.detach();
+        } else {
+            Logger::Log("CollectBulletsThread joined successfully.");
+        }
     }
     Logger::Log("BulletHarvester destroyed");
 }

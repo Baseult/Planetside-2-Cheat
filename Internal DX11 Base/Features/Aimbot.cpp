@@ -18,7 +18,6 @@ Aimbot::Aimbot() {
     m_threadRunning = false;
     m_aimbotActive = false;
     
-    // Old caching members removed - replaced by snapshot system
     
     if (!InitializeNtUserInjectMouseInput()) {
         Logger::Error("Aimbot: Failed to initialize NtUserInjectMouseInput");
@@ -58,9 +57,6 @@ void Aimbot::Update() {
 void Aimbot::AimbotWorker() {
     Logger::Log("Aimbot::AimbotWorker entered.");
 
-    // ================================================================
-    // =================== START-UP SYNC FIX =========================
-    // ================================================================
     int startup_tries = 0;
     while (!DX11Base::g_Running) {
         if (++startup_tries > 100) { // Timeout after ~1 second
@@ -70,7 +66,6 @@ void Aimbot::AimbotWorker() {
         std::this_thread::yield();
     }
     Logger::Log("Aimbot::AimbotWorker: g_Running confirmed, starting main loop.");
-    // ================================================================
 
     while (m_threadRunning) {
         try {
@@ -78,14 +73,10 @@ void Aimbot::AimbotWorker() {
                 break;
             }
             
-            // Check if required objects still exist
             if (!DX11Base::g_Engine || !g_TargetManager || !g_Game) {
                 break;
             }
             
-            // Only apply aimbot if:
-            // 1. Menu is not open
-            // 2. Aimbot is active (shooting or hotkey)
             if (!DX11Base::g_Engine->bShowMenu && IsAimbotActive()) {
                 auto targetOpt = g_TargetManager->GetCurrentTarget();
                 if (targetOpt) {
@@ -102,15 +93,13 @@ void Aimbot::AimbotWorker() {
                     int mouseX = static_cast<int>(mouseMovement.x);
                     int mouseY = static_cast<int>(mouseMovement.y);
 
-                    // Apply mouse movement directly (like InputSys::Get().move_mouse in your C# code)
                     MoveMouse(mouseX, mouseY);
                 }
             }
             
-            std::this_thread::sleep_for(std::chrono::milliseconds(10)); // Yield for smoother movement
+            std::this_thread::sleep_for(std::chrono::milliseconds(10));
         }
         catch (...) {
-            // Silent catch to prevent crashes during shutdown
             break;
         }
     }
@@ -139,53 +128,40 @@ bool Aimbot::IsHotkeyPressed() {
     return (GetAsyncKeyState(g_Settings.Aimbot.iHotkey) & 0x8000) != 0;
 }
 
-// GetBonePosition removed - no longer needed since EntitySnapshot already contains headPosition
 
 Utils::Vector3 Aimbot::CalculateAimAngles(const Utils::Vector3& targetPos) {
     if (!g_Game) {
         return Utils::Vector3(0, 0, 0);
     }
 
-    // Step 1: Convert target world coordinates to screen coordinates
     Utils::Vector2 targetScreenPos;
     if (!g_Game->WorldToScreen(targetPos, targetScreenPos)) {
         return Utils::Vector3(0, 0, 0);
     }
 
-    // Step 2: Get screen center
     Utils::Vector2 screenSize = g_Renderer->GetScreenSize();
     Utils::Vector2 screenCenter = Utils::Vector2(screenSize.x / 2.0f, screenSize.y / 2.0f);
 
-    // Step 3: Calculate relative movement vector and distance to target
     Utils::Vector2 relativeMovement = targetScreenPos - screenCenter;
     float distanceToTarget = relativeMovement.Length();
 
-    // Deadzone: If we are already very close to target (e.g. 1 pixel), stop to avoid jitter.
     if (distanceToTarget < 5.0f) {
         return Utils::Vector3(0, 0, 0);
     }
 
-    // Step 4: Robust method - Fixed speed per frame
-    // Define a maximum speed (e.g. 300 pixels per second at 100 FPS -> 3 pixels per frame)
-    // We scale this with the smoothing value. A high smoothing value reduces speed.
-    float speedFactor = 50.0f; // Base speed. Adjust this value to control overall speed.
+    float speedFactor = 50.0f;
     float speed = speedFactor;
     if (g_Settings.Aimbot.fSmoothing > 0.001f) {
         speed = speedFactor / g_Settings.Aimbot.fSmoothing;
     }
     if (g_Settings.Aimbot.fSmoothing < 1.f) speed = speedFactor; // Max speed if smoothing is off
 
-    // Calculate the distance we want to travel in this frame
-    float distanceToMove = speed; // In a 10ms loop this is the movement per 10ms
+    float distanceToMove = speed;
 
     Utils::Vector2 mouseMovement;
     if (distanceToMove > distanceToTarget) {
-        // If the distance to move is greater than the remaining distance,
-        // we only move the remaining distance to avoid overshooting the target.
         mouseMovement = relativeMovement;
     } else {
-        // Otherwise move with our constant speed towards the target.
-        // Normalize the vector to get direction, then multiply by distance
         Utils::Vector2 direction;
         if (distanceToTarget > 0.001f) {
             direction = Utils::Vector2(relativeMovement.x / distanceToTarget, relativeMovement.y / distanceToTarget);
@@ -195,11 +171,6 @@ Utils::Vector3 Aimbot::CalculateAimAngles(const Utils::Vector3& targetPos) {
         mouseMovement = Utils::Vector2(direction.x * distanceToMove, direction.y * distanceToMove);
     }
 
-    // IMPORTANT: To avoid the problem with static_cast<int>, we should not round
-    // before it is absolutely necessary. The `MoveMouse` function expects int, so it is ok here,
-    // but be aware that precision is lost here.
-    // If the calculated movement is between -1 and 1, it becomes 0, which stops aiming.
-    // A minimal movement can help here.
     if (abs(mouseMovement.x) < 1.0f && abs(relativeMovement.x) > 1.0f) {
         mouseMovement.x = (mouseMovement.x > 0) ? 1.0f : -1.0f;
     }

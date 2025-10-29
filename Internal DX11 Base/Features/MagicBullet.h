@@ -15,8 +15,8 @@ public:
 private:
     void UpdateThread();
     void ManipulateFreshBullets();
-    void ManipulateBullet(const BulletSnapshot& bullet, const Utils::Vector3& targetPos);
-    Utils::Vector3 CalculateBulletPosition(const Utils::Vector3& targetPos);
+    void ManipulateBullet(const BulletSnapshot& bullet, const Utils::Vector3& targetPos, const Utils::Vector3& viewAngle);
+    Utils::Vector3 CalculateBulletPosition(const Utils::Vector3& targetPos, const Utils::Vector3& viewAngle);
     
     std::thread m_updateThread;
     std::atomic<bool> m_isRunning = true;

@@ -53,9 +53,6 @@ void NoRecoil::Update() {
 void NoRecoil::NoRecoilWorker() {
     Logger::Log("NoRecoil::NoRecoilWorker entered.");
 
-    // ================================================================
-    // =================== START-UP SYNC FIX =========================
-    // ================================================================
     int startup_tries = 0;
     while (!DX11Base::g_Running) {
         if (++startup_tries > 100) { // Timeout after ~1 second
@@ -65,7 +62,6 @@ void NoRecoil::NoRecoilWorker() {
         std::this_thread::yield();
     }
     Logger::Log("NoRecoil::NoRecoilWorker: g_Running confirmed, starting main loop.");
-    // ================================================================
 
     while (m_threadRunning) {
         try {
@@ -73,14 +69,10 @@ void NoRecoil::NoRecoilWorker() {
                 break;
             }
             
-            // Check if required objects still exist
             if (!DX11Base::g_Engine || !g_Game) {
                 break;
             }
             
-            // Only apply recoil compensation if:
-            // 1. Menu is not open
-            // 2. Player is actually shooting (not just holding mouse button)
             if (!DX11Base::g_Engine->bShowMenu && IsPlayerShooting()) {
                 ApplyRecoilCompensation();
             }
@@ -88,7 +80,6 @@ void NoRecoil::NoRecoilWorker() {
             std::this_thread::yield();
         }
         catch (...) {
-            // Silent catch to prevent crashes during shutdown
             break;
         }
     }
@@ -100,31 +91,21 @@ bool NoRecoil::IsLeftMousePressed() {
 }
 
 void NoRecoil::ApplyRecoilCompensation() {
-    // Dynamic integer-based strength (1 - 100)
     int strength = g_Settings.Misc.NoRecoil.iStrength;
     
-    // Dynamic compensation calculation
-    // 1 = 0.1 pixel, 10 = 1 pixel, 50 = 5 pixels, 100 = 10 pixels
     float compensationFloat = (strength / 10.0f);
     int compensation = static_cast<int>(compensationFloat + 0.5f);
     
-    // Ensure minimum movement
     if (compensation < 1 && strength > 0) {
         compensation = 1;
     }
     
-    // Use the undocumented Windows syscall for mouse movement
     InjectMouseMovement(0, compensation);
     
-    // Dynamic sleep based on strength (inverse relationship)
-    // Lower strength = longer sleep = more precise
-    // Formula: extraSleep = (100 - strength) / 5
-    // 1 = 19.8ms, 10 = 18ms, 50 = 10ms, 100 = 0ms
     int extraSleep = static_cast<int>((100 - strength) / 5.0f);
     
-    // Ensure minimum sleep for very low values
     if (strength <= 5) {
-        extraSleep = 20; // Maximum precision for very low values
+        extraSleep = 20;
     }
     
     if (extraSleep > 0) {

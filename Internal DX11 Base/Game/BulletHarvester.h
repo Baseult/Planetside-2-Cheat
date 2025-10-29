@@ -6,6 +6,7 @@
 #include <atomic>
 #include <set>
 #include <queue>
+#include <condition_variable>
 
 class BulletHarvester {
 public:
@@ -32,6 +33,8 @@ private:
     std::thread m_updateThread;
     std::thread m_collectBulletsThread;  // Renamed from m_magicBulletThread
     std::atomic<bool> m_isRunning;
+    std::condition_variable m_shutdownCondition;
+    std::mutex m_shutdownMutex;
     uintptr_t m_lastTrackedBulletPtr = 0;
     
     // ✅ PERFORMANCE: Einmalig gecachte Adressen
