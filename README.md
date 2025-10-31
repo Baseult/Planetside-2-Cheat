@@ -1,4 +1,4 @@
-# PS2Base - PlanetSide 2 DX11 Internal Framework
+# Planetside 2 Cheat - PS2Base - PlanetSide 2 DX11 Internal Framework
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Visual Studio](https://img.shields.io/badge/IDE-Visual%20Studio-blue.svg)](https://visualstudio.microsoft.com/)
