@@ -31,38 +31,6 @@ cd PS2Base
 
 4. Build the solution (Ctrl+Shift+B)
 
-## 📁 Project Structure
-
-```
-PS2Base/
-├── Internal DX11 Base/          # Main project directory
-│   ├── Core/                   # Core engine components
-│   │   ├── Engine.h/cpp        # Main engine class
-│   │   ├── Main.cpp            # Entry point and thread management
-│   │   └── dllmain.cpp         # DLL entry point
-│   ├── Game/                   # Game-specific components
-│   │   ├── SDK.h               # Game structures and enums
-│   │   ├── Offsets.h           # Memory offsets
-│   │   ├── GameData.h          # Data structures
-│   │   └── Game.h/cpp          # Game state management
-│   ├── Features/               # Feature implementations
-│   │   ├── ESP.h/cpp           # Visual features
-│   │   ├── Aimbot.h/cpp        # Targeting system
-│   │   ├── MagicBullet.h/cpp   # Bullet manipulation
-│   │   └── TargetManager.h/cpp # Target selection
-│   ├── Renderer/               # Rendering system
-│   │   └── Renderer.h/cpp      # DirectX 11 wrapper
-│   ├── Utils/                  # Utility classes
-│   │   ├── Vector.h            # Vector mathematics
-│   │   ├── Settings.h          # Configuration
-│   │   └── Logger.h/cpp        # Logging system
-│   └── Framework/             # Third-party libraries
-│       └── ImGui/              # UI framework
-├── docs/                       # Documentation
-├── examples/                   # Usage examples
-└── research/                   # Research materials
-```
-
 ## 🎯 Usage
 
 ### Basic Usage
